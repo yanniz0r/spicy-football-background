@@ -1,8 +1,6 @@
 import Phaser from 'phaser';
 import overlayUrl from '../assets/overlay.svg';
 
-const TEAM_A_COLOR = 0x00ffff;
-const TEAM_B_COLOR = 0xff3399;
 const BALL_COLOR = 0xffffff;
 const PLAYER_RADIUS = 10;
 const BALL_RADIUS = 7;
@@ -420,8 +418,6 @@ export class FootballScene extends Phaser.Scene {
   }
 
   private drawPlayers() {
-    const hue = (this.ledTime * 25) % 360;
-
     for (const p of this.players) {
       const pulse = 1 + Math.sin(this.ledTime * 3 + p.x * 0.05) * 0.15;
       const speed = Math.sqrt(p.vx ** 2 + p.vy ** 2);

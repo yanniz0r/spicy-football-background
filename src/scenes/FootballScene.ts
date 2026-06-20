@@ -7,9 +7,9 @@ const BALL_COLOR = 0xffffff;
 const PLAYER_RADIUS = 10;
 const BALL_RADIUS = 7;
 const PLAYER_SPEED = 90;
-const KICK_SPEED = 340;
-const KICK_RANGE = 26;
-const FRICTION = 0.97;
+const KICK_SPEED = 420;
+const KICK_RANGE = 45;
+const FRICTION = 0.985;
 const SEP_DIST = PLAYER_RADIUS * 3.5;
 
 type Role = 'gk' | 'cb' | 'mf' | 'st';
@@ -67,7 +67,7 @@ export class FootballScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.svg('overlay', overlayUrl);
+    this.load.svg('overlay', overlayUrl, { width: 714, height: 420 });
   }
 
   create() {
@@ -285,8 +285,8 @@ export class FootballScene extends Phaser.Scene {
 
       if (dist < KICK_RANGE && p.kickCooldown === 0) {
         const targetX = p.team === 0 ? this.FX + this.FW + 50 : this.FX - 50;
-        const tDx = targetX - this.ball.x + Phaser.Math.FloatBetween(-55, 55);
-        const tDy = (this.FY + this.FH / 2) - this.ball.y + Phaser.Math.FloatBetween(-70, 70);
+        const tDx = targetX - this.ball.x + Phaser.Math.FloatBetween(-100, 100);
+        const tDy = (this.FY + this.FH / 2) - this.ball.y + Phaser.Math.FloatBetween(-130, 130);
         const tLen = Math.hypot(tDx, tDy) || 1;
         this.ball.vx = (tDx / tLen) * KICK_SPEED;
         this.ball.vy = (tDy / tLen) * KICK_SPEED;
@@ -423,34 +423,53 @@ export class FootballScene extends Phaser.Scene {
     const hue = (this.ledTime * 25) % 360;
 
     for (const p of this.players) {
-      const baseColor = p.team === 0 ? TEAM_A_COLOR : TEAM_B_COLOR;
-      const pulseColor = this.hslToHex(
-        p.team === 0 ? (hue + 180) % 360 : hue,
-        100, 65
-      );
       const pulse = 1 + Math.sin(this.ledTime * 3 + p.x * 0.05) * 0.15;
       const speed = Math.sqrt(p.vx ** 2 + p.vy ** 2);
       const motionGlow = Math.min(speed / PLAYER_SPEED, 1);
 
-      // Glow
       p.glow.clear();
-      p.glow.fillStyle(pulseColor, 0.06 + motionGlow * 0.08);
-      p.glow.fillCircle(p.x, p.y, PLAYER_RADIUS * 4 * pulse);
-      p.glow.fillStyle(baseColor, 0.12 + motionGlow * 0.1);
-      p.glow.fillCircle(p.x, p.y, PLAYER_RADIUS * 2.2 * pulse);
 
-      // Body
-      p.gfx.clear();
-      p.gfx.fillStyle(baseColor, 1);
-      p.gfx.fillCircle(p.x, p.y, PLAYER_RADIUS);
+      if (p.team === 0) {
+        // German gold glow
+        p.glow.fillStyle(0xFFCC00, 0.07 + motionGlow * 0.08);
+        p.glow.fillCircle(p.x, p.y, PLAYER_RADIUS * 4 * pulse);
+        p.glow.fillStyle(0xCC0000, 0.12 + motionGlow * 0.1);
+        p.glow.fillCircle(p.x, p.y, PLAYER_RADIUS * 2.2 * pulse);
+
+        // German flag ball: scan horizontal lines, color by vertical band
+        p.gfx.clear();
+        const r = PLAYER_RADIUS;
+        for (let dy = -r; dy <= r; dy++) {
+          const hw = Math.sqrt(Math.max(0, r * r - dy * dy));
+          const col = dy < -r / 3 ? 0x111111 : dy < r / 3 ? 0xCC0000 : 0xFFCC00;
+          p.gfx.fillStyle(col, 1);
+          p.gfx.fillRect(p.x - hw, p.y + dy, hw * 2, 1);
+        }
+      } else {
+        // Ivory Coast glow: orange outer, green inner
+        p.glow.fillStyle(0xF77F00, 0.07 + motionGlow * 0.08);
+        p.glow.fillCircle(p.x, p.y, PLAYER_RADIUS * 4 * pulse);
+        p.glow.fillStyle(0x009A44, 0.12 + motionGlow * 0.1);
+        p.glow.fillCircle(p.x, p.y, PLAYER_RADIUS * 2.2 * pulse);
+
+        // Ivory Coast flag ball: scan vertical lines, color by horizontal band
+        p.gfx.clear();
+        const r = PLAYER_RADIUS;
+        for (let dx = -r; dx <= r; dx++) {
+          const hh = Math.sqrt(Math.max(0, r * r - dx * dx));
+          const col = dx < -r / 3 ? 0xF77F00 : dx < r / 3 ? 0xFFFFFF : 0x009A44;
+          p.gfx.fillStyle(col, 1);
+          p.gfx.fillRect(p.x + dx, p.y - hh, 1, hh * 2);
+        }
+      }
 
       // Direction dot
       const angle = Math.atan2(p.vy, p.vx);
-      p.gfx.fillStyle(0x000000, 0.6);
+      p.gfx.fillStyle(0xffffff, 0.7);
       p.gfx.fillCircle(
         p.x + Math.cos(angle) * (PLAYER_RADIUS * 0.55),
         p.y + Math.sin(angle) * (PLAYER_RADIUS * 0.55),
-        3
+        2.5
       );
     }
   }
